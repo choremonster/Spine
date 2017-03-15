@@ -128,7 +128,12 @@ open class HTTPClient: NetworkClient {
 				Spine.logInfo(.networking, "\(statusCode): \(request.url!) – (\(data!.count) bytes)")
 				success = true
 				
-			} else {
+            } else if let statusCode = response?.statusCode , 401 ... 403 ~= statusCode {
+                // If the user gets a 401/403 status code they may need to refresh an auth token
+                Spine.logInfo(.networking, "\(statusCode): \(request.url!) – (\(data!.count) bytes)")
+                success = self.reauthorize()
+                
+            } else {
 				// API Error
 				Spine.logWarning(.networking, "\(response!.statusCode): \(request.url!) – (\(data!.count) bytes)")
 				success = false
@@ -146,6 +151,11 @@ open class HTTPClient: NetworkClient {
 		
 		task.resume()
 	}
+    
+    open func reauthorize() -> Bool {
+        // Override this method and inject your own reauthorization workflow
+        return false
+    }
 }
 
 public protocol HTTPClientDelegate {
